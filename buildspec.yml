@@ -1,16 +1,22 @@
 version: 0.2
+
 phases:
+  install:
+    runtime-versions:
+      nodejs: 12
+    commands:
+      - echo "Installing dependencies..."
+      - npm install -g aws-cli
   pre_build:
     commands:
-      - npm install --unsafe-perm -g gatsby
+      - echo "Starting pre-build phase..."
+      - npm install
+      - npm run build
   build:
     commands:
-      - cp .env.$ENV .env
-      - npm install
-      - gatsby clean && gatsby build
-      - echo "******** Cleaning S3 objects ********"
-      - aws s3 rm $S3_BUCKET --recursive
-artifacts:
-  files:
-    - '**/*'
-  base-directory: public
+      - echo "Starting build phase..."
+      - aws s3 sync ./build s3://your-bucket-name
+  post_build:
+    commands:
+      - echo "Starting post-build phase..."
+      - aws cloudfront create-invalidation --distribution-id your-cloudfront-distribution-id --paths "/*"
